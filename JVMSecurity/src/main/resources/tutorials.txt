@@ -1,0 +1,3 @@
+The java policy file from : /Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/security
+is used when running the example. If you edit the file, do it with BBEdit .. cause with simple notepad it won't work,
+something about admin rights.
