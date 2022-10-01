@@ -1,3 +1,39 @@
 The java policy file from : /Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/security
 is used when running the example. If you edit the file, do it with BBEdit .. cause with simple notepad it won't work,
 something about admin rights.
+
+
+
+Principal players in security
+   Permissions
+   ex to read/write from a file
+   represented by a subclass of public abstract class Permission   ex  FilePermission class
+   used for both requesting and granting
+
+   Policy
+   ex configuring externally to the app the permissions
+   represented by pluggable Policy singleton
+   works with ClassLoader and CodeSource to grant Permissions when code is loaded
+
+   Enforcement
+   if a piece of code violates a policy, a security exception should be thrown..
+   represented by
+          AccessController uses Policy and Permission to decide wheter or not to allow access.
+            and
+          SecurityManager - called to check requests to protect operations...if called is not allowed to make an operation an exception is thrown
+          !!!! Calls will succeed or fail based on CodeSource; CodeSource contains location of signature. For example a call
+           new FileOutputStream("/system.dat") might work from a location in the codebase, where such a access is allowed, but not
+           from another location. (SecurityManager will check if a call from a location is allowed or not)
+
+           !!!!
+           By default, SecurityManager is not enabled !!!! We need to turn it on. Most server processes should activate security
+           How do we enable it ?
+              java -Djava.security.manager [AppToRunSecure]
+                 or
+            in main method
+                 System.setSecurityManager(new SecurityManager());       the 2 options are equivalent
+
+            it is up to the developer of sensitive operations to require permissions.
+            Policy file in java 11 is in a different location than for java 8. there is a default.policy file and a java.policy file.
+            PolicyFile is the name of the class that once instantiated, will contain the data from the policy file/files.
+            SecureClassLoader is a class that caches codesource to permissions mapping
