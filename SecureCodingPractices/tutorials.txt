@@ -1,0 +1,104 @@
+https://www.pluralsight.com/courses/secure-coding-practices-java-applications-java-se-11-developer-certification-1z0-819
+
+The earlier you can find security bugs, the fewer breaches you will have.
+
+Designing secure code
+    Fundamentals:
+        Simplify your code
+        Avoid duplication
+        Minimize permission checks - (author mentions that permission checks for webmethods should be done at login time, not on
+                every method call)
+        Document security method classes
+        Secure third party code : keep dependencies up to date. Consider the maintenance impact of each library
+
+    Enforcing invariants in the constructors - various conditions on the parameters of the constructors that assure us that
+            the created instance contains valid data
+
+    !!! Security favours what is allowed vs what is not allowed ...for example if you have a regex for validating a username's
+    characters, use an "allowed chars regex" not an "not allowed chars reg ex"
+
+    Ensure immutability - make class that is not extendable final, private constructor
+        - one could make a method final, if you can't make the whole class, and thus ensure that if that final method
+        contains some strict business rules that should not be modified/extend, then final will prevent extension
+        - if a value doesn't need to change, make it final
+        - if you have a collection, even if you make it final, it will not be enough if you don't make a copy of it in the
+        constructor (otherwise it will still be accesible from the outside see example)
+        - only add getters when you need them...not by default..also..don't make them public by default..leave them on
+        package private ..or protected (so that the attack surface is lower)
+
+    Clonable interface
+        - clonable bypasses the constructor, which is the way we check the values that will be assigned to the fields
+            (see "Enforcing invariants in the constructors" above)
+        - to be avoided
+
+    Serialization
+        - bypasses the constructor..similar issues to cloneable..
+        - you should override the readResolve method in order to make serialization more secure
+        - if you don't want serialization override readObject and writeObject methods or you can use ObjectInputFilter
+        where you can configure the classes where you want serialization to happen
+        - use transient for sensitive fields..or the java 11 ObjectStreamField[] which contains the developer specified
+        fields that he agrees can be serialized safely
+        - to be avoided
+
+
+Handling sensitive data in logs, memory and exceptions
+
+    Evaluate what is safe to log
+        application logging - code has enough context to determine data sensitivity (for example logs in classes that deal
+                                with logging in..changing passwords)
+        infrastructural logging - code lacks context to determine data sensitivity.
+
+        - "don't log it "                     should be the default
+        - don't log sensitive information (passwords, tokens sessionids, personal identifiable data)
+        - hash sensitive data if you really need it in logs
+            log in a GUID instead of username/email / hash
+        - be careful with toString methods, not to add sensitive data, that will then be written to logs etc
+
+    Evaluate what is safe to cache in memory
+        - if one gets a heap dump...does he find passwords?
+        - nulling passwords...if you null it in a method, keep in mind that methods are super fast...and the value is still
+        in the heap dump, because the garbage collection occurs more infrequent than the speed of an average method.
+        - best is to only have in memory the hashed version of the password
+
+        - "don't cache it" - default
+        - don't cache sensitive information
+        - don't cache sensitive information in plaintext
+
+    Exception handling
+        - ensure that no exception makes it to the user...exceptions are for developers ..not for end users
+        - the user should only see messages/strings that you have control on (not the exception msj from a DB error for ex)
+
+
+Protecting against injection and inclusion
+
+    Do we need to send the data to the client?
+    Where possible don't roll your own security...use a libary !
+    Turn off features that you don't need from a library/server etc
+
+    Use preparedStatements
+    Canonicalize input ...meaning use one representation UTF-8 on the server
+    Validate input - favor allowlists over blocklists
+    Encode output -> consider where it is being rendered
+
+    Don't load resource that you don't know or recognize
+    Load only local resources and use an allowlist
+    Load remote resources over HTTPS and use an allowlist
+
+
+Protecting agains Denial of Service
+
+    Fundamentals:
+        Define and enforce limits : for caches, for files etc
+        Protect against overflow..
+        Clean up or Pool Resources : db connections, files other external resources etc
+
+    java defines and enforces a limit of heap size 25% of available memory, up to 25 GB
+    java xml defines and enforces a limit on entity expansion
+    limit on reading files by size
+
+    Consider library like Caffeine for more performant(?) hashmaps
+
+    use try with resources to close resources that implement AutoClosable
+
+
+TODO : https://www.oracle.com/java/technologies/javase/seccodeguide.html   maybe as objective for next year
