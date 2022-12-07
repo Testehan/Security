@@ -11,6 +11,7 @@
     <modules>
         <module>JVMSecurity</module>
         <module>SecureCodingPractices</module>
+        <module>WebApplicationSecurity</module>
     </modules>
 
     <properties>

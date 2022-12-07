@@ -1,0 +1,239 @@
+https://www.pluralsight.com/courses/java-securing-web-applications-aaa
+
+
+Introduction
+
+    How secure is your password?
+        https://www.security.org/how-secure-is-my-password/
+
+        How long would your user passwords last a data breach?
+
+    What can you and I do?
+        Detect problem via static and dynamic analysis
+        Exploit - ethical hacking toolkit
+        Mitigate - secure coding practice
+
+        OWASP recomandations ASVS used through the course
+
+        (there is a link to a vulnerable app used through the course on github ..terracotta bank)
+
+
+Identifying and Mitigating Enumeration Vulnerabilities
+
+    Enumeration - the ability for a malicious user to infer user information especially authentication details
+        (example...consider a forgot password page...where an attacker puts a random email...and then the site
+        reponds by saying that the email is not valid...he might try a different email, a small variation...until
+        he finds a correct email...and thus knows that that email is used on the website..if he does this millions
+        of times, then he will get a lot of emails of users from that page.)
+
+    Enumeration is mentioned in ASVS - "verify that information enumeration is not possible via login, password reset
+    or forgot account functionality."
+
+    Response bodies should be identical for all end users
+        "The username or password you entered is invalid" is way better than msg like "The username is incorrect" or
+            "The password is incorrect"
+
+        "If your username is in our system, you should receive an email in a few minutes"
+
+        "A confirmation link has been sent to the email provided" much better than "The email provided is already used on this website"
+
+        200 error code better than 409 in case of fail and 200 in case of success
+
+    The problem with constant time (it refers to constant time in a successfull login request vs a failed one)
+        hackers can get insights from this..especially from the hashing of the password time
+
+        for example the java equals method exists when it finds the first different character...which means that
+        a quick login request means that we tried a wrong password, vs a slow login request (that fails) which means
+        that the attacker is getting closer to generating the correct password (just like when cracking a lock and
+        you hear the right sounds)
+
+    Solution for constant time issues?
+        1. Perform the same password hash even if the user is not present in the DB (with the invalid username and
+        password provided by the attacker)
+
+        2. in case of obtaining the User from the DB, you should make sure that User table is indexed, so that the retrieval
+        of user entity takes the same amount of time, if the user is present or not in the DB
+
+        3. how about constant time when registering a user ? (if there are differences here, the attacker might find out if
+        a user is present or not in the DB)
+            here the author suggests that for example the sending of the confirmation email is done with Kafka where the email
+            sent is done in this other app (Kafka..which sends the email in various time ammounts) and the response to
+            the registration is the same (meaning our code has the same response time, and kafka does it in their time)
+
+
+Brute force vulnerabilities
+
+    ASVS -> "Verify that there are no default passwords in use for the application framework or any components used by the
+            application...such ad admin/password"
+            "Verify that anti-automation is in place to prevent breched credential testing, brute forcing, and account lock
+            attackes."
+
+            "2 factor authentication"
+!!!!
+   the author's laptop was able to do 250k logging attempts per minute using a file with passwords stolen/discovered in the past
+   which were then altered to contain small modifications (like adding some extra characters or numbers etc)
+
+   How to protect against such attacks ?
+        1. Check for default username/passwords or backdoors in your application
+        2. If you need for some reason a default username and password, you could generate the password for the admin
+        at login time, and write it somewhere (log maybe) and at first login, the user would be forced to change it ;
+        better than having a hardcoded admin/password
+
+        3. Soft lockout when we suspect that a brute force login is attempted... simply suspend a username to login for
+        some time, or an ip adress from making login requests
+        4. Hard lockout means that the user would need to call customer support or do some kind of verification before
+        he would be able to log in
+                !! An attacker could then hold an account blocked/hostage by doing this type of attack
+
+                !!! keep in mind when implementing such  solution not to give the attacker information, like in the case
+                of Enumeration mentioned in the previous chapter...use generic messages:
+                    "Something went wrong, please try again later"
+
+        4. Securely verifying the IP address
+            - if too many invalid login attempts are made from the same ip, lock it our for some time
+
+        5. Multi factor authentication ?
+            SMS doesn't prove that you have your cell phone
+
+            https://github.com/j256/two-factor-auth
+                Nice library to try out in a java app
+
+            The course author recomends putting the 2fa on the same page as the login page...So the user would need to
+            introduce the username, password and 2fa. Why ? Because otherwise, he will get more info. If attacker
+            reaches page 2 of the 2fa, he knows that most likely, the username and password that he tried on the first
+            login page was correct, and now all he has to do is to hack the 2fa.
+
+
+Plaintext vulnerabilities in transit  (man in the middle attacks)
+
+    No plaintext passwords
+        In transit use TLS
+        On screen you should hve it hidden by ****
+        At rest -> have the password hashed in the DB
+        In app memory
+
+    TLS in Java
+        1. Add the appropiate private key to a local keystore
+        2. Enable https in the application server configuration
+
+        (example in the lessons on how to make https work with a tomcat server)
+
+    Token based authentication
+
+    Protecting passwords with OAuth
+
+ !!!!
+    Have another application handling authentification entirely
+        Identity Federation means delegating authentification..and password management to another app
+        also called Identity provider
+
+        SAML - xml based protocol for authentication and authorization (keycloack or shibboleth )
+        OpenID Connect - based on OAuth 2.0 built around user consent
+
+        (course author used Okta to do an example with such an authentication mechanism)
+
+
+Plaintext vulnerabilities at Rest
+
+    The importance of Entropy
+        - entropy means how easy it would be to guess the next chars of a password knowing the first
+            for ex if the first chars are "1234" then an attacker would most likely try "5678" as the next chars
+            in that passord...
+        - if your password has random chars it is much better than a dictionary word or famous phrase
+
+        ASVS - "Verify password entry fields allow or encourage the use of pass-phrases, and do not prevent long
+                pass-phrases or highly complex passwords from being entered"
+             - "Verify that measures are in place to block the use of commonly chosen passwords and weak pass-phrases"
+             LUNS -> lowercase, uppercase numbers and special characters (special characters are defined on the owasp website)
+                            https://owasp.org/www-community/password-special-characters
+
+            - https://github.com/GoSimpleLLC/nbvcxz   -> library to use to test the password strength
+            course author uses this lib to give suggestions to the user regarding to the password strenght so that he can
+            choose a stronger one
+
+        Edward Snowden : "Assume your adversary is capable of one trillion guesses per second"
+            this means that a pass with an Entropy of 40 (according to the library mentioned above) would be cracked in 1.1 seconds
+            if someone would have the power of 1 trillion guesses per second...or 19 minutes if the pass was bcrypted
+
+    Password storage (from worst to best)
+        no password
+        plaintext
+        md5
+        Hash + salt     salt is a random string that is placed in the password field with the hashed(password+salt)
+                            something like "abc" + MD5(PASSWORD+"abc")   if 2 users have the same password, because of the salt they will have different hashes
+                        A good salt is globally unique, randomly generated with a crypto secure algorithm..and has 128 bits of entropy
+                        salt has a fixed length so no delimenter is needed when storing it with the password
+        Bcrypt  -> well understood + CPU intensive (slow) + configurable strength
+                user password will have the follwing format:
+                    $ + version +           // what version of bcrypt you use
+                    $ + strength +          // strength
+                    $ + salt + BCrypt(password + salt)
+
+
+    Password change exploiting
+
+    Forgot password exploiting
+        Securing steps :
+            1. Ask for account info
+            2. Verify the information
+            3. Generate and store token
+            4. Send the token via a side channel (email...keep in mind other points from this course, you want to do this
+                in another process so that the attacker doesn't do timing enumeration attack)
+            5. Inform the user that instructions were sent either way -> the user is informed in a way that prevents Enumeration
+            6. On the change password page, confirm the token
+            7. Once the password is changed, invalidate the token
+
+
+Creating an audit trail for security events
+
+    Logging Authentication events
+        - authentication events that were denied and why
+        - authorization events that were denied and why
+        - access to data, was it denied and why
+
+    Aspect oriented programming
+        - we want to add behaviour to all http requests (in this case logging)
+        - for example spring security is a set of servlet filters..each is focused on one type of authentication and there is
+        also a filter focused on authorization
+        - even if you are not using spring, you can use this model/approach to simplify your security
+
+        -in spring there are some events triggered when a logging is successful or not, and one can define listeners in which to
+        place the logging
+
+    Logging change events
+        - privileges granted or revoked - admin or different privileges..why by whom etc
+        - personal or other secure data changed
+        - system configuration changes
+
+    Logging availability resource and badness events
+        - app starts and stops
+        - availability reduced planned or not
+        - resource allocation failed
+        - something nefarious detected, like brute force
+        - input validation failed
+        - output validation failed
+
+    What info should go in a log
+        - who : ip for ex
+        - which service : app region
+        - what : action login, obj console, status failed
+        - why
+        - how important / priority
+        - integrity of the log -> guid and timestamp
+
+    !!!
+    Log to a different machine or service...you can use json for log format...
+
+
+TODO create maybe a library of unit tests/integration that can be run to test if your app is secure
+    it would have some sort of configuration where the login page is located etc...and it will perform various tests
+
+DONE https://www.baeldung.com/java-microbenchmark-harness
+
+TODO play a bit with the 2fa library : https://github.com/j256/two-factor-auth
+
+TODO play with library : https://github.com/GoSimpleLLC/nbvcxz
+
+DONE play with BCrypt : https://www.baeldung.com/java-password-hashing
+                        https://dzone.com/articles/storing-passwords-securely-with-bcrypt-and-java
+                        https://www.baeldung.com/sha-256-hashing-java
