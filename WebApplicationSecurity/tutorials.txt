@@ -224,11 +224,13 @@ Creating an audit trail for security events
     !!!
     Log to a different machine or service...you can use json for log format...
 
+https://www.security.org/how-secure-is-my-password/
+    nice tool to find out how secure is a password
 
 TODO create maybe a library of unit tests/integration that can be run to test if your app is secure
     it would have some sort of configuration where the login page is located etc...and it will perform various tests
 
-DONE https://www.baeldung.com/java-microbenchmark-harness
+DONE https://www.baeldung.com/java-microbenchmark-harness   awesome for performance testing in java
 
 TODO play a bit with the 2fa library : https://github.com/j256/two-factor-auth
 
