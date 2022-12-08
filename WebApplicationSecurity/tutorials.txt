@@ -234,7 +234,8 @@ DONE https://www.baeldung.com/java-microbenchmark-harness   awesome for performa
 
 TODO play a bit with the 2fa library : https://github.com/j256/two-factor-auth
 
-TODO play with library : https://github.com/GoSimpleLLC/nbvcxz
+Done play with library : https://github.com/GoSimpleLLC/nbvcxz  good library that can be used to estimate password strength
+    See PasswordStrengthEstimator class for some code examples
 
 DONE play with BCrypt : https://www.baeldung.com/java-password-hashing
                         https://dzone.com/articles/storing-passwords-securely-with-bcrypt-and-java
